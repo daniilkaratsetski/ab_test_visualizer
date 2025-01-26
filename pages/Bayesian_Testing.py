@@ -64,7 +64,7 @@ def main():
     ax.set_ylabel("Density")
 
     ax.annotate(
-        f"Posterior Mean (probability of heads): {posterior_mean:.3f}\n"
+        f"Posterior Mean (probability of heads): {posterior_mean:.3f}\n",
         xy=(posterior_mean, beta.pdf(posterior_mean, alpha_posterior, beta_posterior)),
         xytext=(0.5, 3),
         arrowprops=dict(facecolor='black', arrowstyle="->"),
