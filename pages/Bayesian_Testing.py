@@ -65,7 +65,6 @@ def main():
 
     ax.annotate(
         f"Posterior Mean (probability of heads): {posterior_mean:.3f}\n"
-        f"95% Credible Interval: ({credible_interval[0]:.3f}, {credible_interval[1]:.3f})",
         xy=(posterior_mean, beta.pdf(posterior_mean, alpha_posterior, beta_posterior)),
         xytext=(0.5, 3),
         arrowprops=dict(facecolor='black', arrowstyle="->"),
@@ -79,7 +78,6 @@ def main():
     # -----------------------------------------------------
     st.subheader("Key Metrics")
     st.write(f"**Posterior Mean**: {posterior_mean:.3f}")
-    st.write(f"**95% Credible Interval**: ({credible_interval[0]:.3f}, {credible_interval[1]:.3f})")
 
 # Ensure the script runs only when executed directly
 if __name__ == "__main__":
