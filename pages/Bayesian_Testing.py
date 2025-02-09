@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import beta
 
+
+st.set_page_config(layout="centered")
+
 def main():
     # -----------------------------------------------------
     # Title Section

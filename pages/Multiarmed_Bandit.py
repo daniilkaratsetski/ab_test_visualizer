@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import beta
 
+
+st.set_page_config(layout="centered")
+
 # Class to represent a bandit
 class Bandit:
     def __init__(self, true_conversion_rate):

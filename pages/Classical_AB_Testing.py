@@ -10,7 +10,7 @@ from scipy.stats import norm
 
 # Page Configuration
 # This sets the page title and layout for the Streamlit web application.
-st.set_page_config(page_title="A/B Testing & Hypothesis Testing", layout="wide")
+st.set_page_config(page_title="A/B Testing & Hypothesis Testing", layout="centered")
 
 # Header
 # Create the main title and initial description on the page.
@@ -37,7 +37,7 @@ st.write(
 
 st.sidebar.header("Main Parameters")
 mean1 = st.sidebar.number_input("Enter mean of sample 1:", value=1.0, step=0.1)
-mean2 = st.sidebar.number_input("Enter mean of sample 2:", value=2.0, step=0.1)
+mean2 = st.sidebar.number_input("Enter mean of sample 2:", value=1.1, step=0.1)
 alpha = st.sidebar.number_input("Enter significance level (alpha):", value=0.05, min_value=0.01, max_value=0.99, step=0.01)
 power = st.sidebar.number_input("Enter power (1 - beta):", value=0.8, min_value=0.1, max_value=0.99, step=0.01)
 
@@ -198,9 +198,9 @@ else:
     st.subheader("Simulation Results")
     st.write(f"Minimum sample size: {min_sample_size}")
     if mean1 == mean2:
-        st.write(f"Type I error: {type_1_error:.2%}")
+        st.write(f"False Positive error: {type_1_error:.2%}")
     else:
-        st.write(f"Type II error: {type_2_error:.2%}")
+        st.write(f"False Negative error: {type_2_error:.2%}")
 
 
 # Effect of Statistical Significance on Sample Size

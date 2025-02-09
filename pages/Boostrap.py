@@ -2,6 +2,9 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+st.set_page_config(layout="centered")
+
 def main():
     # Sidebar inputs
     st.sidebar.header("Sample Parameters")

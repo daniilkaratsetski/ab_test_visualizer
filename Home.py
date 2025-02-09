@@ -2,7 +2,7 @@ import streamlit as st
 import os
 
 # Set the page configuration
-st.set_page_config(page_title="Main Page", layout="wide")
+st.set_page_config(page_title="Main Page", layout="centered")
 
 # Welcome text
 st.title("Welcome to the AB-testing website")
