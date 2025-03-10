@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import norm
+import plotly.graph_objects as go
+from scipy.stats import norm, gaussian_kde
 
 st.set_page_config(page_title="A/B Testing & Hypothesis Testing", layout="centered")
 
@@ -42,12 +42,12 @@ def calculate_sample_size(mean1, mean2, alpha, power):
         return "Effect size cannot be zero. Please provide different mean values."
     z_alpha = norm.ppf(1 - alpha / 2)
     z_beta = norm.ppf(power)
-    sample_size = ((z_alpha + z_beta) ** 2 * 2) / (effect_size ** 2)
-    return np.ceil(sample_size)
+    sample_size = ((z_alpha + z_beta) ** 2 * 2 * (1 ** 2)) / (effect_size ** 2)
+    return int(np.ceil(sample_size))
 
 if st.button("Calculate Sample Size"):
     sample_size = calculate_sample_size(mean1, mean2, alpha, power)
-    if isinstance(sample_size, str):  # If there's an error message
+    if isinstance(sample_size, str): 
         st.error(sample_size)
     else:
         st.session_state['calculated_sample_size'] = sample_size
@@ -65,9 +65,10 @@ mean1 = st.session_state['mean1']
 mean2 = st.session_state['mean2']
 
 sample_size = st.number_input("Sample size per group:", value=int(st.session_state['calculated_sample_size']), step=1)
+st.session_state['calculated_sample_size'] = sample_size
 confidence_level = st.slider("Confidence Level:", 0.9, 0.99, 0.95, step=0.01)
 
-standard_error = 1 / np.sqrt(sample_size)
+standard_error = np.sqrt((1**2 / sample_size) + (1**2 / sample_size))
 
 z_value = norm.ppf(1 - (1 - confidence_level) / 2)
 
@@ -80,24 +81,32 @@ z_stat = (mean1 - mean2) / standard_error
 p_value = 2 * (1 - norm.cdf(abs(z_stat)))
 
 x = np.linspace(-5, 5, 500)
-y1 = norm.pdf(x, loc=mean1, scale=1)  # PDF for sample 1, std dev = 1
+y1 = norm.pdf(x, loc=mean1, scale=1)
 y2 = norm.pdf(x, loc=mean2, scale=1)
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=x, y=y1, mode='lines', name="Sample 1 Distribution", line=dict(color="#2A9D8F", width=2)))  
+fig.add_trace(go.Scatter(x=x, y=y2, mode='lines', name="Sample 2 Distribution", line=dict(color="#E9C46A", width=2)))  
+fig.add_trace(go.Scatter(x=[ci1_lower, ci1_lower], y=[0, 0.45], mode='lines', name="Sample 1 CI Lower", line=dict(color="#264653", dash="dash", width=2)))  
+fig.add_trace(go.Scatter(x=[ci1_upper, ci1_upper], y=[0, 0.45], mode='lines', name="Sample 1 CI Upper", line=dict(color="#264653", dash="dash", width=2)))  
+fig.add_trace(go.Scatter(x=[ci2_lower, ci2_lower], y=[0, 0.45], mode='lines', name="Sample 2 CI Lower", line=dict(color="#D4A373", dash="dash", width=2)))  
+fig.add_trace(go.Scatter(x=[ci2_upper, ci2_upper], y=[0, 0.45], mode='lines', name="Sample 2 CI Upper", line=dict(color="#D4A373", dash="dash", width=2)))  
 
-fig, ax = plt.subplots(figsize=(8, 5))
-ax.plot(x, y1, label="Sample 1 Distribution", color="blue", alpha=0.8)
-ax.plot(x, y2, label="Sample 2 Distribution", color="orange", alpha=0.8)
+fig.update_yaxes(range=[0, max(y1.max(), y2.max()) * 1.2])  
 
-ax.axvline(ci1_lower, color="blue", linestyle="--", label="Sample 1 CI Lower", alpha=0.8)
-ax.axvline(ci1_upper, color="blue", linestyle="--", label="Sample 1 CI Upper", alpha=0.8)
-ax.axvline(ci2_lower, color="orange", linestyle="--", label="Sample 2 CI Lower", alpha=0.8)
-ax.axvline(ci2_upper, color="orange", linestyle="--", label="Sample 2 CI Upper", alpha=0.8)
+fig.update_layout(title=dict(text="Confidence Intervals for Two Distributions", font=dict(size=20)), 
+                  width=1200,  
+                  height=700,  
+                  xaxis=dict(title="Value", title_font=dict(size=16), tickfont=dict(size=12)),
+                  yaxis=dict(title="Probability Density", title_font=dict(size=16), tickfont=dict(size=12)),
+                  legend=dict(
+                      x=0.85,  
+                      y=0.95,  
+                      font=dict(size=12),
+                      bgcolor="rgba(0,0,0,0)", 
+                      borderwidth=0  
+                  )) 
 
-ax.legend()
-ax.set_title("Confidence Intervals for Two Distributions")
-ax.set_xlabel("Value")
-ax.set_ylabel("Probability Density")
-
-st.pyplot(fig)
+st.plotly_chart(fig)
 
 
 st.write(
@@ -112,11 +121,7 @@ st.write(
 st.header("Hypothesis Testing Visualizer: Power, Beta, and Sample Size")
 
 
-#alpha = st.number_input("Alpha (𝛼) - significance level", value=0.05, min_value=0.01, max_value=0.1, step=0.01)
-beta = -1*power + 1 #st.number_input("Beta (𝛽) - test power", value=0.8, min_value=0.5, max_value=0.99, step=0.01)
-#mu_a = st.number_input("Mean for Sample A (𝜇𝐴)", value=1.0, step=0.1)
-#mu_b = st.number_input("Mean for Sample B (𝜇𝐵)", value=1.1, step=0.1)
-
+beta = -1*power + 1 
 
 def simulate_tests(alpha, beta, mean1, mean2, sample_size):
     a_samples = np.random.normal(mean1, 1, (1000, sample_size))
@@ -133,7 +138,7 @@ def simulate_tests(alpha, beta, mean1, mean2, sample_size):
 
     return a_means, b_means, type_1_error, type_2_error
 
-min_sample_size = int(calculate_sample_size( mean1, mean2, alpha, 1 - beta))
+min_sample_size = int(calculate_sample_size(mean1, mean2, alpha, 1 - beta))
 if isinstance(min_sample_size, str):
     st.error(min_sample_size)
 else:
@@ -142,16 +147,34 @@ else:
     results = simulate_tests(alpha, beta, mean1, mean2, sample_size)
     a_means, b_means, type_1_error, type_2_error = results
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.hist(a_means, bins=30, alpha=0.7, label="Sample A")
-    ax.hist(b_means, bins=30, alpha=0.7, label="Sample B")
+    # Compute density estimates
+    a_density = gaussian_kde(a_means)
+    b_density = gaussian_kde(b_means)
+    x_range = np.linspace(min(a_means.min(), b_means.min()), max(a_means.max(), b_means.max()), 300)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x_range, y=a_density(x_range), 
+                             fill='tozeroy', name="Sample A", mode='lines', line=dict(color="steelblue")))
+    fig.add_trace(go.Scatter(x=x_range, y=b_density(x_range), 
+                             fill='tozeroy', name="Sample B", mode='lines', line=dict(color="darkorange")))
     critical_value = mean1 + norm.ppf(1 - alpha) * (1 / np.sqrt(sample_size))
-    ax.axvline(x=critical_value, color='red', linestyle='--', label="Alpha (significance level)")
-    ax.legend()
-    ax.set_title("Histograms of Sample Means")
-    ax.set_xlabel("Mean Values")
-    ax.set_ylabel("Frequency")
-    st.pyplot(fig)
+    fig.add_trace(go.Scatter(x=[critical_value, critical_value], y=[0, 1], 
+                             mode='lines', name="Alpha (significance level)", 
+                             line=dict(color='red', dash='dash', width=2)))
+
+    unified_font_size = 18
+    fig.update_layout(
+        title=dict(text="Hypothesis Testing Visualizer: Power, Beta, and Sample Size", font=dict(size=22)),
+        xaxis_title="Mean Values",
+        yaxis_title="Density",
+        xaxis=dict(title_font=dict(size=unified_font_size), tickfont=dict(size=unified_font_size - 2)),
+        yaxis=dict(title_font=dict(size=unified_font_size), tickfont=dict(size=unified_font_size - 2)),
+        legend=dict(font=dict(size=unified_font_size - 2)),
+        width=1200, 
+        height=700  
+    )
+
+    st.plotly_chart(fig)
 
     st.subheader("Simulation Results")
     st.write(f"Minimum sample size: {min_sample_size}")
@@ -174,12 +197,25 @@ alpha_values = np.linspace(0.01, 0.1, 100)
 required_samples = [calculate_sample_size(interactive_mean1, interactive_mean2, alpha, interactive_power) 
                     for alpha in alpha_values]
 
-fig, ax = plt.subplots()
-ax.plot(alpha_values, required_samples, label="Sample Size vs. Alpha")
-ax.set_xlabel("Alpha Level (Significance)")
-ax.set_ylabel("Required Sample Size")
-ax.legend()
-st.pyplot(fig)
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=alpha_values, y=required_samples, mode='lines', name="Sample Size vs. Alpha", line=dict(width=2)))  # Thinner line
+fig.update_layout(title="Sample Size vs. Alpha",
+                  xaxis_title="Alpha Level (Significance)",
+                  yaxis_title="Required Sample Size",
+                  width=1200,  # Increased width for better readability
+                  height=700,   # Maintain height for clarity
+                  title_font=dict(size=24),  # Bigger title
+                  xaxis_title_font=dict(size=20),  # Bigger x-axis title
+                  yaxis_title_font=dict(size=20),  # Bigger y-axis title
+                  legend=dict(
+                      x=0.85,  # Move legend inside the plot (right side)
+                      y=0.95,  # Position near the top
+                      font=dict(size=12),
+                      bgcolor="rgba(0,0,0,0)",  # Fully transparent background
+                      borderwidth=0  # Remove border
+                  ))  # Moved legend inside the main figure area to free up space
+
+st.plotly_chart(fig)
 
 st.write("As the significance level (alpha) decreases, the required sample size increases. This relationship highlights the tradeoff between statistical precision and sample size.")
 
@@ -195,16 +231,27 @@ required_samples_beta = [
     for beta in beta_values
 ]
 
-fig, ax = plt.subplots()
-ax.plot(beta_values, required_samples_beta, label="Sample Size vs. Beta")
-ax.set_xlabel("Beta (1 - Power)")
-ax.set_ylabel("Required Sample Size")
-ax.set_title("Effect of Beta on Required Sample Size")
-ax.legend()
-st.pyplot(fig)
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=beta_values, y=required_samples_beta, mode='lines', name="Sample Size vs. Beta", line=dict(width=2)))  # Thinner line
+fig.update_layout(title="Effect of Beta on Required Sample Size",
+                  xaxis_title="Beta (1 - Power)",
+                  yaxis_title="Required Sample Size",
+                  width=1200,  # Increased width for better readability
+                  height=700,   # Maintain height for clarity
+                  title_font=dict(size=24),  # Bigger title
+                  xaxis_title_font=dict(size=20),  # Bigger x-axis title
+                  yaxis_title_font=dict(size=20),  # Bigger y-axis title
+                  legend=dict(
+                      x=0.85,  # Move legend inside the plot (right side)
+                      y=0.95,  # Position near the top
+                      font=dict(size=12),
+                      bgcolor="rgba(0,0,0,0)",  # Fully transparent background
+                      borderwidth=0  # Remove border
+                  ))  # Moved legend inside the main figure area to free up space
+
+st.plotly_chart(fig)
 
 st.write(
     "As beta decreases (or power increases), the required sample size grows. "
     "This demonstrates the tradeoff between desired power and the number of observations needed."
 )
-
